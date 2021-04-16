@@ -39,7 +39,16 @@ Current service year: 2021
 
 ## 🚀 Deploying your own bot <a name = "deployment"></a>
 
-Ensure that your environment variables using Node.js are pointing to your bot tokens. Push the project to Heroku as a worker (not web).
+### For launching a copy of the bot on your own
+
+Ensure that your environment variables using Node.js are pointing to the bot tokens you have created on the [Discord Developer Portal](https://discord.com/developers/docs/game-sdk/applications).
+Push the project to Heroku as a worker (not web). This is done by editing the Procfile, which has already been done.
+
+### For pushing your changes onto the official bot
+
+Either invite your new version of the app to the server, or if you're unable to invoke any changes to the bot then send a pull request to this repository with your new code and ping the current bot maintainer.
+
+Current bot maintainer: - [@DHS Isaac C](https://github.com/Iscaraca)
 
 ## ✍️ Authors <a name = "authors"></a>
 
