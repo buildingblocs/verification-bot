@@ -87,6 +87,8 @@ const processCommand = (receivedMessage) => {
     case "clear":
       purgeCommand(arguments, receivedMessage);
       break;
+    case "verify":
+      verifyCommand(arguments, receivedMessage)
     default:
       receivedMessage.channel.send(
         "I don't understand the command. Try `&help`"
@@ -374,6 +376,28 @@ const testCommand = (arguments, receivedMessage) => {
   receivedMessage.channel.send(
     "Hi <@" + receivedMessage.author.id + ">, this is a test message"
   );
+};
+
+const verifyCommand = (arguments, receivedMessage) => {
+  if (arguments.length > 0){
+    receivedMessage.channel.send(
+      "Invalid arguments given."
+    );
+  }
+  else{
+    if (receivedMessage.member.roles.cache.some(r => r.name === "OIC" || r.name === "school-leads" || r.name === "temp_admin")){
+      message.guild.members.forEach(m => {
+        if (m.roles.includes(role => role.name === "unverified")){
+          return m.send("Please verify yourself. For help, dm the OIC or any of the school leads");
+        }
+      });
+    }
+    else{
+      receivedMessage.channel.send(
+        "You are not authorised to give this command."
+      );
+    }
+  }
 };
 
 clientTwo.init();
