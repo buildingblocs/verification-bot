@@ -88,7 +88,8 @@ const processCommand = (receivedMessage) => {
       purgeCommand(arguments, receivedMessage);
       break;
     case "verify":
-      verifyCommand(arguments, receivedMessage)
+      verifyCommand(arguments, receivedMessage);
+      break;
     default:
       receivedMessage.channel.send(
         "I don't understand the command. Try `&help`"
@@ -385,11 +386,9 @@ const verifyCommand = (arguments, receivedMessage) => {
     );
   }
   else{
-    if (receivedMessage.member.roles.cache.some(r => r.name === "OIC" || r.name === "school-leads" || r.name === "temp_admin")){
-      message.guild.members.forEach(m => {
-        if (m.roles.includes(role => role.name === "unverified")){
+    if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
+      receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
           return m.send("Please verify yourself. For help, dm the OIC or any of the school leads");
-        }
       });
     }
     else{
