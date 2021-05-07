@@ -388,7 +388,7 @@ const verifyCommand = (arguments, receivedMessage) => {
   else{
     if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
       receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
-          return m.send("Please verify yourself. For help, dm the OIC or any of the school leads");
+          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.');
       });
     }
     else{
