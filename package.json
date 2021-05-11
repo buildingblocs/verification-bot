@@ -12,17 +12,17 @@
   "dependencies": {
     "discord.js": "^12.5.3",
     "dotenv": "^8.2.0",
-    "reaction-role": "^4.0.2",
+    "reaction-role": "^4.1.0",
     "request": "^2.88.2"
   },
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bharagth/bbcs-discord-bot.git"
+    "url": "git+https://github.com/buildingblocs/bbcs-discord-bot.git"
   },
   "keywords": [],
   "bugs": {
-    "url": "https://github.com/bharagth/bbcs-discord-bot/issues"
+    "url": "https://github.com/buildingblocs/bbcs-discord-bot/issues"
   },
-  "homepage": "https://github.com/bharagth/bbcs-discord-bot#readme"
+  "homepage": "https://github.com/buildingblocs/bbcs-discord-bot#readme"
 }

@@ -13,11 +13,14 @@ let clientTwo = new ReactionRole(botTwoSecretToken)
 client.on("ready", () => {
   // Set bot status to: "Watching out for a &help in chat"
   client.user.setActivity("out for a &help in chat", { type: "WATCHING" });
+  console.log("Bot 1 Connected to discord!")
 });
 
 clientTwo.on("ready", () => {
   // Set bot status to: "Watching for a &help in chat"
   clientTwo.user.setActivity("out for the organisers", { type: "WATCHING" });
+  
+  console.log("Bot 2 Connected to discord!")
 });
 
 // For server auth
@@ -167,67 +170,84 @@ const pollCommand = async (arguments, receivedMessage) => {
 };
 
 const reactCommand = async (arguments, receivedMessage) => {
-  // Set options for reaction roles
+  // Set options for reaction role
+  console.log("running react command now. about to crash?")
+try {
   const juneEvent = clientTwo.createOption(
     "☀️",
+    ["698841625627197441"],
     "Given you the Workshop (June Event) role. This committee would be in charge of organising and planning for all the workshops within the June Event. This includes (and is not limited to) the following items: \nConducting and scheduling trial runs for the various workshops \nEnsuring that the workshops content are of quality \nLiaising with other committees to plan for the June Event\nEnsure that the workshops on the actual June Event is smooth running",
-    "Your role has been removed.",
-    ["698841625627197441"]
+    "Your role has been removed."
+    
   );
   const marchEvent = clientTwo.createOption(
     "🌱",
+    ["803645952866385940"],
     "Given you the Workshop (March Event) role. This committee would be in charge of organising and planning for all the workshops within the March Event. This includes (and is not limited to) the following items: \nConducting and scheduling trial runs for the various workshops \nEnsuring that the workshops content are of quality \nLiaising with other committees to plan for the March Event\nEnsure that the workshops on the actual March Event is smooth running",
-    "Your role has been removed.",
-    ["803645952866385940"]
+    "Your role has been removed."
   );
   const qa = clientTwo.createOption(
     "🔎",
+    ["803646515025281034"],
     "Given you the Quality Assurance role. This is a newly created committee which would be in charge of design and ensuring that anything that BBCS puts out is of quality and consistency. This includes (and is not limited to) the following items: \nReviewing every piece of work that is put forth by BBCS, ensuring that it keeps consistent with our previous designs and wording \nDesigning posters and banners, etc",
-    "Your role has been removed.",
-    ["803646515025281034"]
+    "Your role has been removed."
   );
   const emcees = clientTwo.createOption(
     "🎙️",
+    ["803646503365246986"],
     "Given you the Emcees role. You will be hosting the events and introducing the various speakers. You might also be tasked with dancing. Don't ask.",
     "Your role has been removed.",
-    ["803646503365246986"]
   );
   const resource = clientTwo.createOption(
     "📦",
+    ["803646523681406977"],
     "Given you the Resource Management role. This is a rebranding of the previous logistics committee which would be in charge of not only logistics of running the events but also human management.",
     "Your role has been removed.",
-    ["803646523681406977"]
   );
   const competition = clientTwo.createOption(
     "🏆",
+    ["803646520297521172"],
     "Given you the Competition role. This is a newly created committee which would be in charge mainly of the AI Challenge on the last day of the June Event. They might also be called to think of and execute challenges in between the 2 main events.",
-    "Your role has been removed.",
-    ["803646520297521172"]
+    "Your role has been removed."
   );
   const entertainment = clientTwo.createOption(
     "🎉",
+    ["698841626348486737"],
     "Given you the Entertainment and Lucky Draw role. This committee would be in charge of all entertainment and lucky draw efforts for the March and June Events. This includes (and is not limited to) the following items: \nHosting lucky draws on the last days of the 2 main events\nSuggesting and executing entertainment ideas to spice up the liveliness of BBCS as a whole",
-    "Your role has been removed.",
-    ["698841626348486737"]
+    "Your role has been removed."
   );
   const games = clientTwo.createOption(
     "🎮",
+    ["698841627606777868"],
     "Given you the Games role. This committee would be in charge of organising and planning for all the games (-related) activities within the March and June Event. This includes (and is not limited to) the following items: \nPlanning for and executing of the CodeCombat Tournament (to be held on one of the main events)\nSuggesting other games which we can play during the event’s allocated slot for games",
-    "Your role has been removed.",
-    ["698841627606777868"]
+    "Your role has been removed."
   );
   const media = clientTwo.createOption(
     "🖥️",
+    ["698841629867507752"],
     "Given you the Website and Media role. This committee would be in charge of maintaining the BBCS Website and BBCS Instagram. This includes (and is not limited to) the following items: \nUpdating the website (when needed)\nPosting pre-event/event posts on Instagram. \nLiaising with CTE-STEM relating to social media collaborations, works",
-    "Your role has been removed.",
-    ["698841629867507752"]
+    "Your role has been removed."
   );
 
+  // clientTwo.createMessage(
+  //   arguments[0],
+  //   "698967005369466951",
+  //   2,
+  //   [],
+  //   juneEvent,
+  //   marchEvent,
+  //   qa,
+  //   emcees,
+  //   resource,
+  //   competition,
+  //   entertainment,
+  //   games,
+  //   media
+  // );
   clientTwo.createMessage(
-    arguments[0],
-    "698967005369466951",
-    2,
-    [],
+    arguments[0], //698967005369466951
+    arguments[1],
+    1000,
     juneEvent,
     marchEvent,
     qa,
@@ -240,6 +260,13 @@ const reactCommand = async (arguments, receivedMessage) => {
   );
 
   clientTwo = await clientTwo.reInit();
+  clientTwo.user.setActivity("out for the organisers", { type: "WATCHING" });
+  console.log("reaction successful!")
+} catch (someOtherError) {
+	console.log(someOtherError);
+  console.log("Some error has been thrown")
+	console.log(e.message);
+}
 };
 
 const commCommand = (arguments, receivedMessage) => {
