@@ -87,6 +87,9 @@ const processCommand = (receivedMessage) => {
     case "clear":
       purgeCommand(arguments, receivedMessage);
       break;
+    case "verify":
+      verifyCommand(arguments, receivedMessage);
+      break;
     default:
       receivedMessage.channel.send(
         "I don't understand the command. Try `&help`"
@@ -374,6 +377,26 @@ const testCommand = (arguments, receivedMessage) => {
   receivedMessage.channel.send(
     "Hi <@" + receivedMessage.author.id + ">, this is a test message"
   );
+};
+
+const verifyCommand = (arguments, receivedMessage) => {
+  if (arguments.length > 0){
+    receivedMessage.channel.send(
+      "Invalid arguments given."
+    );
+  }
+  else{
+    if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
+      receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
+          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.');
+      });
+    }
+    else{
+      receivedMessage.channel.send(
+        "You are not authorised to give this command."
+      );
+    }
+  }
 };
 
 clientTwo.init();
