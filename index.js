@@ -182,6 +182,9 @@ const reactCommand = async (arguments, receivedMessage) => {
       chanID = arguments[0];
       msgID = arguments[1];
     }
+    else if (arguments.length === 1){
+      msgID = arguments[0];
+    }
     const juneEvent = clientTwo.createOption(
       "☀️",
       ["698841625627197441"],
