@@ -324,15 +324,15 @@ const commCommand = (arguments, receivedMessage) => {
  * Participant 698902585742196747
 */
 const confirmCommand = (arguments, receivedMessage) => {
-  console.log(arguments);
-	console.log(arguments.length)
-	let nickLen = 0;
-	for (let i=0; i<arguments.length-1; i++){
-		nickLen += arguments[i].length;
-	}
-  if (nickLen > 32) {
+  let nickLen = 0;
+  for (let i=0; i<arguments.length-1; i++){
+    nickLen += arguments[i].length;
+  }
+  if (arguments[0].toUpperCase() === "OJC"){
+    receivedMessage.channel.send("<@"+receivedMessage.author.id+">, please read the verification instructions carefully and not copy the example given. Feel free to message the OICs if you need any help");
+  }else if (nickLen > 32) {
     console.log("Error: Nickname would be more than 32 characters. Need to rename");
- 		receivedMessage.channel.send("<@"+receivedMessage.author.id+">, the command you entered was too long. Please verify with your school **initials** and your full name such that the both of them (including spaces) are less than 32 characters.\nAn example would be `&confirm OJC Lim Ah Seng participant` for Lim Ah Seng, a participant from Original Junior College");   
+    receivedMessage.channel.send("<@"+receivedMessage.author.id+">, the command you entered was too long. Please verify with your school **initials** and your full name such that the both of them (including spaces) are less than 32 characters.\nAn example would be `&confirm OJC Lim Ah Seng participant` for Lim Ah Seng, a participant from Original Junior College");   
   }else{
     receivedMessage.channel.send(
       "Thank you <@" +
