@@ -36,7 +36,7 @@ client.on("guildMemberAdd", (member) => {
         guild.name +
         `**, <@${member.user.id}>! You are our ` +
         guild.memberCount +
-        `th coder! Please use the command "&confirm {school name} {full name} {participant | organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.`
+        `th coder! Please use the command "&confirm {school name} {full name} {participant | organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!`
     );
   }, 4000);
 });
