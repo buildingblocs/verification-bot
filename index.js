@@ -36,7 +36,7 @@ client.on("guildMemberAdd", (member) => {
         guild.name +
         `**, <@${member.user.id}>! You are our ` +
         guild.memberCount +
-        `th coder! Please use the command "&confirm {school name} {full name} {participant | organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!`
+        `th coder! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College\n\n**To sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!**`
     );
   }, 4000);
 });
@@ -324,24 +324,31 @@ const commCommand = (arguments, receivedMessage) => {
  * Participant 698902585742196747
 */
 const confirmCommand = (arguments, receivedMessage) => {
-  console.log(arguments);
-  if (arguments.length - arguments[arguments.length - 1] > 32) {
+  let nickLen = 0;
+  for (let i=0; i<arguments.length-1; i++){
+    nickLen += arguments[i].length;
+  }
+  if (arguments[0].toUpperCase() === "OJC"){
+    receivedMessage.channel.send("<@"+receivedMessage.author.id+">, please read the verification instructions carefully and not copy the example given. Feel free to message the OICs if you need any help");
+  }else if (nickLen > 32) {
     console.log("Error: Nickname would be more than 32 characters. Need to rename");
-  }
-  receivedMessage.channel.send(
-    "Thank you <@" +
-      receivedMessage.author.id +
-      ">! You can now access the other channels."
-  );
-  setTimeout(() => {}, 1000)
-  receivedMessage.member.roles.remove("698841628856811601");
+    receivedMessage.channel.send("<@"+receivedMessage.author.id+">, the command you entered was too long. Please verify with your school **initials** and your full name such that the both of them (including spaces) are less than 32 characters.\nAn example would be `&confirm OJC Lim Ah Seng participant` for Lim Ah Seng, a participant from Original Junior College");   
+  }else{
+    receivedMessage.channel.send(
+      "Thank you <@" +
+        receivedMessage.author.id +
+        ">! You can now access the other channels."
+    );
+    setTimeout(() => {}, 1000)
+    receivedMessage.member.roles.remove("698841628856811601");
 
-  if (arguments[arguments.length - 1] === "organiser") {
-    receivedMessage.member.roles.add("698841628324134923")
-  } else {
-    receivedMessage.member.roles.add("698902585742196747")
+    if (arguments[arguments.length - 1] === "organiser") {
+      receivedMessage.member.roles.add("698841628324134923")
+    } else {
+      receivedMessage.member.roles.add("698902585742196747")
+    }
+    receivedMessage.member.setNickname(arguments.slice(0, arguments.length - 1).join(' '));
   }
-  receivedMessage.member.setNickname(arguments.slice(0, arguments.length - 1).join(' '));
 };
 
 const purgeCommand = (arguments, receivedMessage) => {
@@ -411,7 +418,7 @@ const verifyCommand = (arguments, receivedMessage) => {
   else{
     if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
       receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
-          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!');
+          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College\n\n**To sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!**');
       });
     }
     else{
