@@ -36,7 +36,7 @@ client.on("guildMemberAdd", (member) => {
         guild.name +
         `**, <@${member.user.id}>! You are our ` +
         guild.memberCount +
-        `th coder! Please use the command "&confirm {school name} {full name} {participant | organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!`
+        `th coder! Please use the command "&confirm {school name} {full name} {participant | organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!`
     );
   }, 4000);
 });
@@ -324,6 +324,10 @@ const commCommand = (arguments, receivedMessage) => {
  * Participant 698902585742196747
 */
 const confirmCommand = (arguments, receivedMessage) => {
+  console.log(arguments);
+  if (arguments.length - arguments[arguments.length - 1] > 32) {
+    console.log("Error: Nickname would be more than 32 characters. Need to rename");
+  }
   receivedMessage.channel.send(
     "Thank you <@" +
       receivedMessage.author.id +
@@ -407,7 +411,7 @@ const verifyCommand = (arguments, receivedMessage) => {
   else{
     if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
       receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
-          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.');
+          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!');
       });
     }
     else{
