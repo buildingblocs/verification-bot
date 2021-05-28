@@ -418,7 +418,7 @@ const verifyCommand = (arguments, receivedMessage) => {
   else{
     if (receivedMessage.member.roles.cache.has("698842106613202944") || receivedMessage.member.roles.cache.has("698829800965668884") || receivedMessage.member.roles.cache.has("699065951123013652")){
       receivedMessage.guild.roles.cache.get("698841628856811601").members.forEach(m => {
-          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {school name} {full name} {participant | organiser}" in the #verification chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nTo sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!');
+          return m.send('Welcome to BuildingBloCS SG! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College\n\n**To sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!**');
       });
     }
     else{
