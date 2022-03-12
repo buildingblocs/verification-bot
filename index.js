@@ -28,7 +28,8 @@ clientTwo.on("ready", () => {
 client.on("guildMemberAdd", (member) => {
   let guild = member.guild; // Reading property `guild` of guildmember object.
   let memberTag = member.user.tag; // GuildMembers don't have a tag property, read property user of guildmember to get the user object from it
-  member.roles.add("698841628856811601");
+  // to be removed
+  // member.roles.add("698841628856811601");
   const channel = client.channels.cache.get("698868628459749407");
   setTimeout(() => {
     channel.send(
@@ -36,8 +37,8 @@ client.on("guildMemberAdd", (member) => {
         guild.name +
         `**, <@${member.user.id}>! You are our ` +
         guild.memberCount +
-        `th coder! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College`
-        //`th coder! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College\n\n**To sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!**` // For during BBCs events
+        //`th coder! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College`
+        `th coder! Please use the command "&confirm {School Initals} {Full Name} {Participant | Organiser}" in this chat to verify your identity before proceeding. Please do not include the curly braces {} in your response.\nDo ensure that your School Initials + Full Name is under *32 characters*. An example would be \`&confirm OJC Lim Ah Seng participant\` for Lim Ah Seng, a participant from Original Junior College\n\n**To sign up for workshops and events, kindly head over to https://go.buildingblocs.sg/signup to register for your tickets!**` // For during BBCs events
     );
   }, 4000);
 });
@@ -342,12 +343,13 @@ const confirmCommand = (arguments, receivedMessage) => {
     );
     setTimeout(() => {}, 1000)
     receivedMessage.member.roles.remove("698841628856811601");
-
-    if (arguments[arguments.length - 1] === "organiser") {
-      receivedMessage.member.roles.add("698841628324134923")
-    } else {
-      receivedMessage.member.roles.add("698902585742196747")
-    }
+    receivedMessage.member.roles.add("952074561262858280")
+    receivedMessage.member.roles.add("952074439477051424")
+//    if (arguments[arguments.length - 1] === "organiser") {
+//      receivedMessage.member.roles.add("698841628324134923")
+//    } else {
+//      receivedMessage.member.roles.add("698902585742196747")
+//    }
     receivedMessage.member.setNickname(arguments.slice(0, arguments.length - 1).join(' '));
   }
 };
