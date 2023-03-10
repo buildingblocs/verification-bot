@@ -1,28 +1,17 @@
-## Its just a simple script written with discordpy 
+## Updated Discord Verification Bot by Seth
 
-1. Place token in "token"
-2. (optional if you're using school filter) update school_filter OR update schools and run schools_parse.py
-3. python3 bot.py
-4. ???
-5. Profit
+### What is this?
 
+This bot takes in commands in the verification channel and gives users the verified role.
+For users requesting organiser or teacher roles, the bot will send a message to the manual verification channel and await a response from organisers with the accept role.
 
-Yeah uh thats about it HAHA
+It has 3 commands:
+verify_participant/verify_student
+verify_teacher
+verify_organiser
 
+### How to use
 
-### Inline parameters: 
-
-> school_validity = False #check for school abbrevation validity against school_filter, set to true to apply the check
-
-basically all this does is grab a list of school acronyms from school_filter and checks if the user gave a valid school. 
-
-> open_organiser_role = False #opens the organiser role to anyone, set to true to open. If set to False, request for manual verification will be send in manual_verification_channel
-
-Allows for anyone to gain the organiser role, if set to false it'll send a manual request to <manual verification channel>
-
-> manual_verification_channel = 1060608689553281034
-channel id for manual_verification channel
-
-### Fuzzing stuff
-
-Just fuzzes the arguments for common mispellings ig. I didn't implemenet deletion of bad queries so yeah this (maybe?) helps with clogging up the channel? Idk. Just QOL things.
+Fill up the .env_template and rename to .env
+Install requirements with `pip install -r requirements.txt`
+Run the bot with `python3 bot.py`

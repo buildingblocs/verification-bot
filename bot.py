@@ -1,67 +1,115 @@
+import os
+from dotenv import load_dotenv
+
 import discord
-from fuzzywuzzy import fuzz, process
+from discord.ext import commands
 
+load_dotenv()
 
+school_validity = bool(os.getenv('SCHOOL_VALIDITY'))  # set to true to enable school validity check
 
-school_validity = False #check for school abbrevation validity against school_filter, set to true to apply the check
-open_organiser_role = False #opens the organiser role to anyone, set to true to open. If set to False, request for manual verification will be send in manual_verification_channel
-manual_verification_channel = 1060608689553281034
-roles = ['participant', 'organiser', 'teacher']
-with open('token') as f:
-    token = f.read()
+manual_verification_channel = int(os.getenv(
+    'MANUAL_VERIFICATION_CHANNEL'))  # channel id of the channel where manual verification requests will be sent
+VERIFY_CHANNEL = int(os.getenv('VERIFY_CHANNEL'))  # channel id of the channel where verification commands will be sent
 
-intents = discord.Intents.default()
-intents.messages = True
+COMMAND_PREFIX = os.getenv('COMMAND_PREFIX')
+TOKEN = os.getenv('BOT_TOKEN')
+
+VERIFIED_ROLE = int(os.getenv('VERIFIED_ROLE'))
+PARTICIPANT_ROLE = int(os.getenv('PARTICIPANT_ROLE'))
+ORGANISER_ROLE = int(os.getenv('ORGANISER_ROLE'))
+TEACHER_ROLE = int(os.getenv('TEACHER_ROLE'))
+ACCEPT_ROLE = os.getenv('ACCEPT_ROLE').split(",")
 
 with open('school_filter') as f:
     school_filter = f.read().splitlines()
 
+intents = discord.Intents.default()
+intents.message_content = True
+intents.reactions = True
+intents.members = True
 
+client = commands.Bot(command_prefix=COMMAND_PREFIX, case_insensitive=True, intents=intents,
+                      help_command=None)
 
-client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+    print(f"Client ID: {client.user.id}")
+
 
 @client.event
 async def on_message(message):
-    if message.author == client.user or message.author.bot:
-        return
+    if not message.author.bot and message.channel.id == VERIFY_CHANNEL:
+        await client.process_commands(message)
 
-    if message.content.startswith('!verify') and message.channel.id == 1041309626341281883:
-        # try:
-        arg = message.content.split()
-        role = arg[1]   
-        role_fuzz = process.extract(role, roles, limit=1)
-        if role_fuzz[0][1] < 70:
-            await message.channel.send('Role syntax invalid or spelling wrong')
-            return
-        else:
-            role = role_fuzz[0][0]
-        school = arg[2].upper()
-        if school_validity:
-            if school not in school_filter:
-                await message.channel.send('School not found in list of school abbreviations, list of allowed abbreviations can be viewed at: https://drive.google.com/file/d/1gK6BKyT_uORc5wDoJaURvDbnx1TTfcEY/view?usp=sharing, please contact kek#8034 if your school is not present')
-                return
-        name = message.content[message.content.index(arg[3]):]
-        if len(name) + len(school) + 1 > 32:
-            await message.channel.send('Name provided is too long, please shorten ^^(enforced by discord\'s global limit)')
-            return
-        if open_organiser_role or role == "participant":
-            await message.author.edit(nick=school+' '+name)
-            verifiedrole = discord.utils.get(message.author.guild.roles, name="verified")
-            discordrole = discord.utils.get(message.author.guild.roles, name="Participant23")
-            await message.author.add_roles(discordrole)
-            await message.author.add_roles(verifiedrole)
+
+def check_authority(member_roles, guild_id):
+    for role in ACCEPT_ROLE:
+        if client.get_guild(guild_id).get_role(int(role)) in member_roles:
+            return True
+    return False
+
+
+@client.event
+async def on_raw_reaction_add(payload):
+    if payload.channel_id == manual_verification_channel and not payload.member.bot:
+        channel = client.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if check_authority(payload.member.roles, payload.guild_id):
+            if payload.emoji.name == "\U00002705":
+                if "organiser" in message.content:
+                    await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
+                        client.get_guild(payload.guild_id).get_role(ORGANISER_ROLE))
+                elif "teacher" in message.content:
+                    await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
+                        client.get_guild(payload.guild_id).get_role(TEACHER_ROLE))
             await message.delete()
         else:
-            await message.author.edit(nick=school+' '+name)
-            discordrole = discord.utils.get(message.author.guild.roles, name="verified")
-            await message.author.add_roles(discordrole)
-            await message.delete()
-            channel = client.get_channel(manual_verification_channel)
-            await channel.send('User: {user} requested for {role} role'.format(user=message.author, role=role))
-        # except:
-        #     await message.channel.send('Wrong syntax used')
-client.run(token)
+            await message.remove_reaction(payload.emoji, payload.member)
+
+
+@client.command(name="verify_participant", aliases=["verify_student"])
+async def verify_participant(ctx, school, *, name):
+    await ctx.message.delete()
+    await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
+    await ctx.author.add_roles(ctx.guild.get_role(PARTICIPANT_ROLE))
+    await ctx.message.author.edit(nick=school + ' ' + name)
+
+
+@client.command()
+async def verify_organiser(ctx, school, *, name):
+    await ctx.message.delete()
+    await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
+    await ctx.message.author.edit(nick=school + ' ' + name)
+    message = await ctx.guild.get_channel(manual_verification_channel).send(
+        f"{ctx.author.mention} has requested to be an "
+        f"organiser. Please verify.")
+    await message.add_reaction("\U00002705")
+    await message.add_reaction("\U0000274C")
+
+
+@client.command()
+async def verify_teacher(ctx, school, *, name):
+    await ctx.message.delete()
+    await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
+    await ctx.message.author.edit(nick=school + ' ' + name)
+    message = await ctx.guild.get_channel(manual_verification_channel).send(
+        f"{ctx.author.mention} has requested to be a teacher. Please verify.")
+    await message.add_reaction("\U00002705")
+    await message.add_reaction("\U0000274C")
+
+
+class Help(commands.HelpCommand):
+
+    async def send_bot_help(self, mapping):
+        filtered = await self.filter_commands(self.context.bot.commands, sort=True)  # returns a list of command objects
+        names = [command.name for command in filtered]  # iterating through the commands objects getting names
+        available_commands = "\n".join(names)  # joining the list of names by a new line
+        embed = discord.Embed(description=available_commands)
+        await self.context.send(embed=embed)
+
+
+client.help_command = Help()
+client.run(TOKEN)
