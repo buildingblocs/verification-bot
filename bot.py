@@ -21,6 +21,9 @@ ORGANISER_ROLE = int(os.getenv('ORGANISER_ROLE'))
 TEACHER_ROLE = int(os.getenv('TEACHER_ROLE'))
 ACCEPT_ROLE = os.getenv('ACCEPT_ROLE').split(",")
 
+command_help = "**{prefix}verify_{role}** \n Verifies {role} \n Syntax (replace the curly braces): {prefix}verify_{" \
+               "role} {{School Initials}} {{Full Name}}"
+
 with open('school_filter') as f:
     school_filter = f.read().splitlines()
 
@@ -39,10 +42,16 @@ async def on_ready():
     print(f"Client ID: {client.user.id}")
 
 
+def check_valid(ctx):
+    if not ctx.author.bot and ctx.channel.id == VERIFY_CHANNEL:
+        return True
+
+
 @client.event
-async def on_message(message):
-    if not message.author.bot and message.channel.id == VERIFY_CHANNEL:
-        await client.process_commands(message)
+@commands.check(check_valid)
+async def on_command(ctx):
+    if not ctx.author.bot and ctx.channel.id == VERIFY_CHANNEL:
+        await ctx.message.delete()
 
 
 def check_authority(member_roles, guild_id):
@@ -57,30 +66,32 @@ async def on_raw_reaction_add(payload):
     if payload.channel_id == manual_verification_channel and not payload.member.bot:
         channel = client.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
-        if check_authority(payload.member.roles, payload.guild_id):
-            if payload.emoji.name == "\U00002705":
-                if "organiser" in message.content:
-                    await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
-                        client.get_guild(payload.guild_id).get_role(ORGANISER_ROLE))
-                elif "teacher" in message.content:
-                    await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
-                        client.get_guild(payload.guild_id).get_role(TEACHER_ROLE))
-            await message.delete()
-        else:
-            await message.remove_reaction(payload.emoji, payload.member)
+        if message.author.id == client.user.id:
+            if check_authority(payload.member.roles, payload.guild_id):
+                if payload.emoji.name == "\U00002705":
+                    if "organiser" in message.content:
+                        await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
+                            client.get_guild(payload.guild_id).get_role(ORGANISER_ROLE))
+                    elif "teacher" in message.content:
+                        await client.get_guild(payload.guild_id).get_member(message.mentions[0].id).add_roles(
+                            client.get_guild(payload.guild_id).get_role(TEACHER_ROLE))
+                await message.delete()
+            else:
+                await message.remove_reaction(payload.emoji, payload.member)
 
 
-@client.command(name="verify_participant", aliases=["verify_student"])
+@client.command(name="verify_participant", aliases=["verify_student"],
+                help=command_help.format(role="participant", prefix=COMMAND_PREFIX))
+@commands.check(check_valid)
 async def verify_participant(ctx, school, *, name):
-    await ctx.message.delete()
     await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
     await ctx.author.add_roles(ctx.guild.get_role(PARTICIPANT_ROLE))
     await ctx.message.author.edit(nick=school + ' ' + name)
 
 
-@client.command()
+@client.command(help=command_help.format(role="organiser", prefix=COMMAND_PREFIX))
+@commands.check(check_valid)
 async def verify_organiser(ctx, school, *, name):
-    await ctx.message.delete()
     await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
     await ctx.message.author.edit(nick=school + ' ' + name)
     message = await ctx.guild.get_channel(manual_verification_channel).send(
@@ -90,9 +101,9 @@ async def verify_organiser(ctx, school, *, name):
     await message.add_reaction("\U0000274C")
 
 
-@client.command()
+@client.command(help=command_help.format(role="teacher", prefix=COMMAND_PREFIX))
+@commands.check(check_valid)
 async def verify_teacher(ctx, school, *, name):
-    await ctx.message.delete()
     await ctx.author.add_roles(ctx.guild.get_role(VERIFIED_ROLE))
     await ctx.message.author.edit(nick=school + ' ' + name)
     message = await ctx.guild.get_channel(manual_verification_channel).send(
@@ -107,8 +118,30 @@ class Help(commands.HelpCommand):
         filtered = await self.filter_commands(self.context.bot.commands, sort=True)  # returns a list of command objects
         names = [command.name for command in filtered]  # iterating through the commands objects getting names
         available_commands = "\n".join(names)  # joining the list of names by a new line
-        embed = discord.Embed(description=available_commands)
-        await self.context.send(embed=embed)
+        embed = discord.Embed(description=available_commands, title="Available Commands")
+        await self.context.send(embed=embed, delete_after=5)
+
+    async def send_command_help(self, command):
+        embed = discord.Embed(description=command.help)
+        await self.context.send(embed=embed, delete_after=5)
+
+
+@client.event
+async def on_command_error(ctx, error):
+    if ctx.channel.id == VERIFY_CHANNEL:
+        await ctx.message.delete(delay=5)
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send(f"Command not found. Use {COMMAND_PREFIX}help to see available commands", delete_after=5)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            command = ctx.command.name
+            await ctx.send(f"Missing required argument. Use {COMMAND_PREFIX}help {command} to see command help",
+                           delete_after=5)
+        elif isinstance(error, commands.BadArgument):
+            command = ctx.command.name
+            await ctx.send(f"Invalid argument. Use {COMMAND_PREFIX}help {command} to see command help", delete_after=5)
+        else:
+            await ctx.send(f"An error has occurred. Please contact an admin.", delete_after=5)
+            raise error
 
 
 client.help_command = Help()
