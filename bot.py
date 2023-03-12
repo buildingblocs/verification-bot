@@ -139,8 +139,10 @@ async def on_command_error(ctx, error):
         elif isinstance(error, commands.BadArgument):
             command = ctx.command.name
             await ctx.send(f"Invalid argument. Use {COMMAND_PREFIX}help {command} to see command help", delete_after=5)
+        elif isinstance(error, commands.CommandInvokeError):
+            await ctx.send("Ensure that your school initials and full name are less than or equal to 32 characters.", delete_after=5)
         else:
-            await ctx.send(f"An error has occurred. Please contact an admin.", delete_after=5)
+            await ctx.send(f"An error has occurred. Please contact an admin.")
             raise error
 
 
