@@ -1,4 +1,6 @@
 node_modules/
-.env
-.env_template
+code/.env
+code/.env_template
 package-lock.json
+.idea/
+test/

@@ -12,6 +12,7 @@ verify_organiser
 
 ### How to use
 
+#### Non-docker
 Fill up the .env_template and rename to .env
 Install requirements with `pip install -r requirements.txt`
 Run the bot with `python3 bot.py`
