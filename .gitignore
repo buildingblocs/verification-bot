@@ -1,6 +1,5 @@
 node_modules/
-code/.env
-code/.env_template
 package-lock.json
 .idea/
 test/
+*.tar

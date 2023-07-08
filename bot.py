@@ -1,25 +1,22 @@
 import os
-from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
 
-load_dotenv()
+school_validity = bool(os.environ['SCHOOL_VALIDITY'])  # set to true to enable school validity check
 
-school_validity = bool(os.getenv('SCHOOL_VALIDITY'))  # set to true to enable school validity check
+manual_verification_channel = int(os.environ[
+                                      'MANUAL_VERIFICATION_CHANNEL'])  # channel id of the channel where manual verification requests will be sent
+VERIFY_CHANNEL = int(os.environ['VERIFY_CHANNEL'])  # channel id of the channel where verification commands will be sent
 
-manual_verification_channel = int(os.getenv(
-    'MANUAL_VERIFICATION_CHANNEL'))  # channel id of the channel where manual verification requests will be sent
-VERIFY_CHANNEL = int(os.getenv('VERIFY_CHANNEL'))  # channel id of the channel where verification commands will be sent
+COMMAND_PREFIX = os.environ['COMMAND_PREFIX']
+TOKEN = os.environ['BOT_TOKEN']
 
-COMMAND_PREFIX = os.getenv('COMMAND_PREFIX')
-TOKEN = os.getenv('BOT_TOKEN')
-
-VERIFIED_ROLE = int(os.getenv('VERIFIED_ROLE'))
-PARTICIPANT_ROLE = int(os.getenv('PARTICIPANT_ROLE'))
-ORGANISER_ROLE = int(os.getenv('ORGANISER_ROLE'))
-TEACHER_ROLE = int(os.getenv('TEACHER_ROLE'))
-ACCEPT_ROLE = os.getenv('ACCEPT_ROLE').split(",")
+VERIFIED_ROLE = int(os.environ['VERIFIED_ROLE'])
+PARTICIPANT_ROLE = int(os.environ['PARTICIPANT_ROLE'])
+ORGANISER_ROLE = int(os.environ['ORGANISER_ROLE'])
+TEACHER_ROLE = int(os.environ['TEACHER_ROLE'])
+ADMIN_ROLE = os.environ['ADMIN_ROLE'].split(",")
 
 command_help = "**{prefix}verify_{role}** \n Verifies {role} \n Syntax (replace the curly braces): {prefix}verify_{" \
                "role} {{School Initials}} {{Full Name}}"
@@ -55,7 +52,7 @@ async def on_command(ctx):
 
 
 def check_authority(member_roles, guild_id):
-    for role in ACCEPT_ROLE:
+    for role in ADMIN_ROLE:
         if client.get_guild(guild_id).get_role(int(role)) in member_roles:
             return True
     return False
@@ -112,6 +109,15 @@ async def verify_teacher(ctx, school, *, name):
     await message.add_reaction("\U0000274C")
 
 
+@client.command(help="**%clear**\n Clears all messages in the channel that are not pinned (admin only)")
+@commands.check(check_valid)
+async def clear(ctx):
+    if check_authority(ctx.author.roles, ctx.guild.id):
+        await ctx.channel.purge(check=lambda m: not m.pinned)
+    else:
+        await ctx.send("You do not have the authority to use this command", delete_after=5)
+
+
 class Help(commands.HelpCommand):
 
     async def send_bot_help(self, mapping):
@@ -140,7 +146,8 @@ async def on_command_error(ctx, error):
             command = ctx.command.name
             await ctx.send(f"Invalid argument. Use {COMMAND_PREFIX}help {command} to see command help", delete_after=5)
         elif isinstance(error, commands.CommandInvokeError):
-            await ctx.send("Ensure that your school initials and full name are less than or equal to 32 characters.", delete_after=5)
+            await ctx.send("Ensure that your school initials and full name are less than or equal to 32 characters.",
+                           delete_after=5)
         else:
             await ctx.send(f"An error has occurred. Please contact an admin.")
             raise error
