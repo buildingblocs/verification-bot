@@ -121,6 +121,14 @@ router.post('/', async (request, env) => {
         return new Response('Bad request signature.', { status: 401 });
     }
 
+    if (interaction.type === InteractionType.PING) {
+        // The `PING` message is used during the initial webhook handshake, and is
+        // required to configure the webhook in the developer portal.
+        return new JsonResponse({
+          type: InteractionResponseType.PONG,
+        });
+      }
+
     // THIS IS THE ONLY IMPORTANT PART
     if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
         let toSend = '';
