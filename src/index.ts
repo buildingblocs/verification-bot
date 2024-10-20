@@ -125,9 +125,9 @@ router.post('/', async (request, env) => {
         // The `PING` message is used during the initial webhook handshake, and is
         // required to configure the webhook in the developer portal.
         return new JsonResponse({
-          type: InteractionResponseType.PONG,
+            type: InteractionResponseType.PONG,
         });
-      }
+    }
 
     // THIS IS THE ONLY IMPORTANT PART
     if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
@@ -159,85 +159,75 @@ router.post('/', async (request, env) => {
             }
         }
 
-        if (interaction.data.custom_id === 'b') {
-            // send dropdown again
+        if (!interaction.member.nick) {
             return new JsonResponse({
                 // this replies to the user
                 type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                 // content is the message, its ephemeral because we want it to be shown only to user
                 data: {
-                    content: 'Ensure you have set your Display Name according to our policies before selecting an option.',
+                    content: 'Please set a Display Name.',
                     flags: InteractionResponseFlags.EPHEMERAL,
                     components: [
                         {
                             "type": 1,
                             "components": [
                                 {
-                                    "type": 3,
-                                    "custom_id": "a",
-                                    "options": [
-                                        {
-                                            "label": "Student/Participant",
-                                            "value": "student",
-                                        },
-                                        {
-                                            "label": "Organiser",
-                                            "value": "org",
-                                        },
-                                        {
-                                            "label": "Teachers/Industry Partners",
-                                            "value": "teacherpartner",
-                                        }
-                                    ],
-                                    "placeholder": "Choose what describes you best",
-                                    "min_values": 1,
-                                    "max_values": 1
+                                    type: 2,
+                                    style: 1,
+                                    label: 'Retry',
+                                    custom_id: 'b'
                                 }
                             ]
+
                         }
                     ]
                 },
             });
-        }
-
-        if (interaction.data.values[0] === 'student') {
-            if (interaction.member.nick.length >= 32) {
-                toSend = "Your Display Name is too long"
-                components = [
-                    {
-                        "type": 1,
-                        "components": [
+        } else {
+            if (interaction.data.custom_id === 'b') {
+                // send dropdown again
+                return new JsonResponse({
+                    // this replies to the user
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    // content is the message, its ephemeral because we want it to be shown only to user
+                    data: {
+                        content: 'Ensure you have set your Display Name according to our policies before selecting an option.',
+                        flags: InteractionResponseFlags.EPHEMERAL,
+                        components: [
                             {
-                                type: 2,
-                                style: 1,
-                                label: 'Retry',
-                                custom_id: 'b'
+                                "type": 1,
+                                "components": [
+                                    {
+                                        "type": 3,
+                                        "custom_id": "a",
+                                        "options": [
+                                            {
+                                                "label": "Student/Participant",
+                                                "value": "student",
+                                            },
+                                            {
+                                                "label": "Organiser",
+                                                "value": "org",
+                                            },
+                                            {
+                                                "label": "Teachers/Industry Partners",
+                                                "value": "teacherpartner",
+                                            }
+                                        ],
+                                        "placeholder": "Choose what describes you best",
+                                        "min_values": 1,
+                                        "max_values": 1
+                                    }
+                                ]
                             }
                         ]
+                    },
+                });
+            }
 
-                    }
-                ]
-            } else {
-                const user_split = interaction.member.nick.split(' ')
-                if (initials.includes(user_split[0])) {
-                    try {
-                        // change channel id as needed
-                        const response = await fetch(`https://discord.com/api/v9/guilds/698829087354912809/members/${interaction.member.user.id}/roles/952074561262858280`, {
-                            method: "PUT",
-                            headers: {
-                                'Authorization': `Bot ${env.DISCORD_TOKEN}`
-                            }
-                        });
-        
-                        if (!response.ok) {
-                            throw new Error(`Response status: ${response.status}`);
-                        }
-                        toSend = `You've been verified. Welcome to BuildingBloCS!`
-                    } catch (error: any) {
-                        console.log(error)
-                        return new JsonResponse({ error: error.message }, { status: 500 });
-                    }
-                } else {
+            if (interaction.data.values[0] === 'student') {
+                if (interaction.member.nick.length >= 32) {
+                    toSend = "Your Display Name is too long"
                     components = [
                         {
                             "type": 1,
@@ -252,32 +242,68 @@ router.post('/', async (request, env) => {
 
                         }
                     ]
-                    toSend = `Either your school initials in your Display Name is missing or your school may not be in our database.
-Please send a message in this channel to allow for one of our organisers to verify you.`
+                } else {
+                    const user_split = interaction.member.nick.split(' ')
+                    if (initials.includes(user_split[0])) {
+                        try {
+                            // change channel id as needed
+                            const response = await fetch(`https://discord.com/api/v9/guilds/698829087354912809/members/${interaction.member.user.id}/roles/952074561262858280`, {
+                                method: "PUT",
+                                headers: {
+                                    'Authorization': `Bot ${env.DISCORD_TOKEN}`
+                                }
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Response status: ${response.status}`);
+                            }
+                            toSend = `You've been verified. Welcome to BuildingBloCS!`
+                        } catch (error: any) {
+                            console.log(error)
+                            return new JsonResponse({ error: error.message }, { status: 500 });
+                        }
+                    } else {
+                        components = [
+                            {
+                                "type": 1,
+                                "components": [
+                                    {
+                                        type: 2,
+                                        style: 1,
+                                        label: 'Retry',
+                                        custom_id: 'b'
+                                    }
+                                ]
+
+                            }
+                        ]
+                        toSend = `Either your school initials in your Display Name is missing or your school may not be in our database.
+    Please send a message in this channel to allow for one of our organisers to verify you.`
+                    }
                 }
-            }
-        };
+            };
 
-        if (interaction.data.values[0] === 'org') {
-            await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
-            toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
-        };
+            if (interaction.data.values[0] === 'org') {
+                await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
+                toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
+            };
 
-        if (interaction.data.values[0] === 'teacherpartner') {
-            await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
-            toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
-        };
+            if (interaction.data.values[0] === 'teacherpartner') {
+                await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
+                toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
+            };
 
-        return new JsonResponse({
-            // this replies to the user
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            // content is the message, its ephemeral because we want it to be shown only to user
-            data: {
-                content: toSend,
-                flags: InteractionResponseFlags.EPHEMERAL,
-                components: components
-            },
-        });
+            return new JsonResponse({
+                // this replies to the user
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                // content is the message, its ephemeral because we want it to be shown only to user
+                data: {
+                    content: toSend,
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                    components: components
+                },
+            });
+        }
     }
 
     console.error('Unknown Type');
