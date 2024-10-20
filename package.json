@@ -1,28 +1,23 @@
 {
-  "name": "bbcsbot",
-  "version": "2.0.0",
-  "description": "A BBCS bot",
-  "main": "index.js",
+  "name": "verification-bot",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "start": "index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "wrangler dev",
+    "cf-typegen": "wrangler types",
+    "register": "node --loader ts-node/esm src/register.ts"
   },
-  "author": "Isaac Chen, Chong Tze Zhao",
-  "license": "ISC",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241018.0",
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.60.3"
+  },
   "dependencies": {
-    "discord.js": "^12.5.3",
-    "dotenv": "^8.2.0",
-    "reaction-role": "^4.1.0",
-    "request": "^2.88.2"
-  },
-  "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/buildingblocs/bbcs-discord-bot.git"
-  },
-  "keywords": [],
-  "bugs": {
-    "url": "https://github.com/buildingblocs/bbcs-discord-bot/issues"
-  },
-  "homepage": "https://github.com/buildingblocs/bbcs-discord-bot#readme"
+    "discord-api-types": "^0.37.102",
+    "discord-interactions": "^4.1.0",
+    "itty-router": "^5.0.18"
+  }
 }
