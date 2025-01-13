@@ -310,6 +310,8 @@ router.post('/', async (request, env) => {
             const roleId = interaction.data.options.find((opt: any) => opt.name === 'role_id')?.value;
             const usersInput = interaction.data.options.find((opt: any) => opt.name === 'users')?.value;
             const users = usersInput.split(',').map((u: string) => u.trim());
+            const issuerId = interaction.member.user.id;
+            const guildId = interaction.guild_id;
 
             if (!roleId || !users.length) {
                 return new JsonResponse({
@@ -323,75 +325,112 @@ router.post('/', async (request, env) => {
             let failureList: string[] = [];
 
             try {
-                // Fetch role details from Discord to get the role name
-                const roleResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/roles`, {
+                // Fetch all roles from the server
+                const roleResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/roles`, {
                     headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
                 });
 
-                if (roleResponse.ok) {
-                    const roles = await roleResponse.json() as any;
-                    // TODO: fix type bruh
-                    const role = roles.find((r: any) => r.id === roleId);
-                    if (role) {
-                        roleName = role.name;
+                if (!roleResponse.ok) {
+                    return new JsonResponse({
+                        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                        data: { content: '❌ Failed to fetch server roles.', flags: InteractionResponseFlags.EPHEMERAL }
+                    });
+                }
+
+                const roles = await roleResponse.json();
+                const targetRole = roles.find((r: any) => r.id === roleId);
+
+                if (!targetRole) {
+                    return new JsonResponse({
+                        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                        data: { content: '❌ The specified role does not exist.', flags: InteractionResponseFlags.EPHEMERAL }
+                    });
+                }
+
+                roleName = targetRole.name;
+
+                // Fetch the issuer's roles
+                const issuerResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/members/${issuerId}`, {
+                    headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                });
+
+                if (!issuerResponse.ok) {
+                    return new JsonResponse({
+                        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                        data: { content: '❌ Failed to verify your roles.', flags: InteractionResponseFlags.EPHEMERAL }
+                    });
+                }
+
+                const issuerData = await issuerResponse.json();
+                const issuerRoles = issuerData.roles;
+
+                // Check if the role being assigned is higher than the issuer's highest role
+                const issuerHighestRole = roles
+                    .filter((r: any) => issuerRoles.includes(r.id))
+                    .reduce((highest: any, role: any) => (role.position > highest.position ? role : highest), { position: 0 });
+
+                if (targetRole.position >= issuerHighestRole.position) {
+                    return new JsonResponse({
+                        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                        data: { content: `❌ You cannot assign the role **${roleName}** because it is higher or equal to your highest role.`, flags: InteractionResponseFlags.EPHEMERAL }
+                    });
+                }
+
+                for (const username of users) {
+                    try {
+                        // Fetch user ID by username
+                        const searchResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/members/search?query=${username}`, {
+                            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                        });
+
+                        if (!searchResponse.ok) {
+                            throw new Error(`Failed to find user ${username}`);
+                        }
+
+                        const members = await searchResponse.json();
+                        const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
+
+                        if (!user) {
+                            failureList.push(username);
+                            continue;
+                        }
+
+                        // Add role to user
+                        const addRoleResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/members/${user.user.id}/roles/${roleId}`, {
+                            method: "PUT",
+                            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                        });
+
+                        if (addRoleResponse.ok) {
+                            successList.push(username);
+                        } else {
+                            failureList.push(username);
+                        }
+                    } catch (error) {
+                        failureList.push(username);
                     }
                 }
+
+                // Construct response message
+                let responseMessage = '';
+                if (successList.length > 0) {
+                    responseMessage += `✅ **${roleName}** added to: ${successList.join(', ')}\n`;
+                }
+                if (failureList.length > 0) {
+                    responseMessage += `❌ Failed to add **${roleName}** to: ${failureList.join(', ')}`;
+                }
+
+                return new JsonResponse({
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    data: { content: responseMessage }
+                });
+
             } catch (error) {
                 return new JsonResponse({
                     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: { content: error }
+                    data: { content: `❌ An error occurred: ${error.message}` }
                 });
             }
-
-            for (const username of users) {
-                try {
-                    // Fetch user ID by username
-                    const searchResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/members/search?query=${username}`, {
-                        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-                    });
-
-                    if (!searchResponse.ok) {
-                        throw new Error(`Failed to find user ${username}`);
-                    }
-
-                    const members = await searchResponse.json() as any;
-                    const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
-
-                    if (!user) {
-                        failureList.push(username);
-                        continue;
-                    }
-
-                    // Add role to user
-                    const addRoleResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/members/${user.user.id}/roles/${roleId}`, {
-                        method: "PUT",
-                        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-                    });
-
-                    if (addRoleResponse.ok) {
-                        successList.push(username);
-                    } else {
-                        failureList.push(username);
-                    }
-                } catch (error) {
-                    console.log(`Failed to add ${roleName} to ${username}:`, error);
-                    failureList.push(username);
-                }
-            }
-
-            // Construct response message
-            let responseMessage = '';
-            if (successList.length > 0) {
-                responseMessage += `✅ **${roleName}** added to: ${successList.join(', ')}\n`;
-            }
-            if (failureList.length > 0) {
-                responseMessage += `❌ Failed to add **${roleName}** to: ${failureList.join(', ')}`;
-            }
-
-            return new JsonResponse({
-                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                data: { content: responseMessage }
-            });
         }
     }
 
