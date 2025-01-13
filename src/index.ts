@@ -277,8 +277,7 @@ router.post('/', async (request, env) => {
 
                             }
                         ]
-                        toSend = `Either your school initials in your Display Name is missing or your school may not be in our database.
-    Please send a message in this channel to allow for one of our organisers to verify you.`
+                        toSend = `Either your school initials in your Display Name is missing or your school may not be in our database. Please send a message in this channel to allow for one of our organisers to verify you.`
                     }
                 }
             };
@@ -302,6 +301,96 @@ router.post('/', async (request, env) => {
                     flags: InteractionResponseFlags.EPHEMERAL,
                     components: components
                 },
+            });
+        }
+    }
+
+    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+        if (interaction.data.name === 'role') {
+            const roleId = interaction.data.options.find((opt: any) => opt.name === 'role_id')?.value;
+            const usersInput = interaction.data.options.find((opt: any) => opt.name === 'users')?.value;
+            const users = usersInput.split(',').map((u: string) => u.trim());
+
+            if (!roleId || !users.length) {
+                return new JsonResponse({
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    data: { content: 'Invalid command usage.', flags: InteractionResponseFlags.EPHEMERAL }
+                });
+            }
+
+            let roleName = `Role ID ${roleId}`;
+            let successList: string[] = [];
+            let failureList: string[] = [];
+
+            try {
+                // Fetch role details from Discord to get the role name
+                const roleResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/roles`, {
+                    headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                });
+
+                if (roleResponse.ok) {
+                    const roles = await roleResponse.json() as any;
+                    // TODO: fix type bruh
+                    const role = roles.find((r: any) => r.id === roleId);
+                    if (role) {
+                        roleName = role.name;
+                    }
+                }
+            } catch (error) {
+                return new JsonResponse({
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    data: { content: error }
+                });
+            }
+
+            for (const username of users) {
+                try {
+                    // Fetch user ID by username
+                    const searchResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/members/search?query=${username}`, {
+                        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                    });
+
+                    if (!searchResponse.ok) {
+                        throw new Error(`Failed to find user ${username}`);
+                    }
+
+                    const members = await searchResponse.json() as any;
+                    const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
+
+                    if (!user) {
+                        failureList.push(username);
+                        continue;
+                    }
+
+                    // Add role to user
+                    const addRoleResponse = await fetch(`https://discord.com/api/v9/guilds/${interaction.guild_id}/members/${user.user.id}/roles/${roleId}`, {
+                        method: "PUT",
+                        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+                    });
+
+                    if (addRoleResponse.ok) {
+                        successList.push(username);
+                    } else {
+                        failureList.push(username);
+                    }
+                } catch (error) {
+                    console.log(`Failed to add ${roleName} to ${username}:`, error);
+                    failureList.push(username);
+                }
+            }
+
+            // Construct response message
+            let responseMessage = '';
+            if (successList.length > 0) {
+                responseMessage += `✅ **${roleName}** added to: ${successList.join(', ')}\n`;
+            }
+            if (failureList.length > 0) {
+                responseMessage += `❌ Failed to add **${roleName}** to: ${failureList.join(', ')}`;
+            }
+
+            return new JsonResponse({
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                data: { content: responseMessage }
             });
         }
     }
