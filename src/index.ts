@@ -98,7 +98,8 @@ router.post('/send', async (request, env) => {
   }
 });
 
-router.post('/', async (request, env) => {
+
+router.post('/', async (request, env, ctx) => {
   const { isValid, interaction } = await verifyDiscordRequest(request, env);
   if (!isValid || !interaction) {
     return new Response('Bad request signature.', { status: 401 });
@@ -110,7 +111,7 @@ router.post('/', async (request, env) => {
     });
   }
 
-  if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
+if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
     let toSend = '';
     let components = undefined;
 
@@ -270,16 +271,14 @@ router.post('/', async (request, env) => {
         });
       }
 
-      // Send a deferred response immediately to avoid timeout.
+      // Immediately send a deferred response
       const deferredResponse = new JsonResponse({
-        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: "Adding..." }
+        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
       });
-
-      // Process the role assignment asynchronously.
-      // If your environment supports it (e.g. Cloudflare Workers), consider using event.waitUntil()
-      processRoleAssignment(interaction, env, roleId, users, issuerId, guildId);
-
+      
+      // Use ctx.waitUntil to ensure background processing continues
+      ctx.waitUntil(processRoleAssignment(interaction, env, roleId, users, issuerId, guildId));
+      
       return deferredResponse;
     }
   }
@@ -422,14 +421,19 @@ async function processRoleAssignment(
 }
 
 async function updateOriginalMessage(interaction: any, env: any, content: string) {
-  await fetch(
-    `https://discord.com/api/v9/webhooks/${env.DISCORD_APPLICATION_ID}/${interaction.token}/messages/@original`,
-    {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content })
-    }
-  );
+  try {
+    const response = await fetch(
+      `https://discord.com/api/v9/webhooks/${env.DISCORD_APPLICATION_ID}/${interaction.token}/messages/@original`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      }
+    );
+    console.log('Update original message status:', response.status);
+  } catch (err) {
+    console.error('Error updating original message:', err);
+  }
 }
 
 const server = {
