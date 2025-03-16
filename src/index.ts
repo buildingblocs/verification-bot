@@ -98,7 +98,6 @@ router.post('/send', async (request, env) => {
   }
 });
 
-
 router.post('/', async (request, env, ctx) => {
   const { isValid, interaction } = await verifyDiscordRequest(request, env);
   if (!isValid || !interaction) {
@@ -303,6 +302,7 @@ async function verifyDiscordRequest(request: any, env: any) {
   return { interaction: JSON.parse(body), isValid: true };
 }
 
+// Process the role assignment in batches to handle large lists synchronously
 async function processRoleAssignment(
   interaction: any,
   env: any,
@@ -314,38 +314,33 @@ async function processRoleAssignment(
   let roleName = `Role ID ${roleId}`;
   let successList: string[] = [];
   let failureList: string[] = [];
+  const batchSize = 10; // You can adjust the batch size as needed
 
   try {
     // Fetch all roles from the server
     const roleResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/roles`, {
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
-
     if (!roleResponse.ok) {
       await updateOriginalMessage(interaction, env, '❌ Failed to fetch server roles.');
       return;
     }
-
     const roles = await roleResponse.json();
     const targetRole = roles.find((r: any) => r.id === roleId);
-
     if (!targetRole) {
       await updateOriginalMessage(interaction, env, '❌ The specified role does not exist.');
       return;
     }
-
     roleName = targetRole.name;
 
     // Fetch the issuer's roles
     const issuerResponse = await fetch(`https://discord.com/api/v9/guilds/${guildId}/members/${issuerId}`, {
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
-
     if (!issuerResponse.ok) {
       await updateOriginalMessage(interaction, env, '❌ Failed to verify your roles.');
       return;
     }
-
     const issuerData = await issuerResponse.json();
     const issuerRoles = issuerData.roles;
 
@@ -353,7 +348,6 @@ async function processRoleAssignment(
     const issuerHighestRole = roles
       .filter((r: any) => issuerRoles.includes(r.id))
       .reduce((highest: any, role: any) => (role.position > highest.position ? role : highest), { position: 0 });
-
     if (targetRole.position >= issuerHighestRole.position) {
       await updateOriginalMessage(
         interaction,
@@ -363,58 +357,59 @@ async function processRoleAssignment(
       return;
     }
 
-    for (const username of users) {
-      try {
-        // Fetch user ID by username using search endpoint
-        const searchResponse = await fetch(
-          `https://discord.com/api/v9/guilds/${guildId}/members/search?query=${username}`,
-          {
-            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+    // Process users in batches synchronously
+    for (let i = 0; i < users.length; i += batchSize) {
+      const batch = users.slice(i, i + batchSize);
+      for (const username of batch) {
+        try {
+          // Fetch user ID by username using search endpoint
+          const searchResponse = await fetch(
+            `https://discord.com/api/v9/guilds/${guildId}/members/search?query=${username}`,
+            {
+              headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+            }
+          );
+          if (!searchResponse.ok) {
+            failureList.push(username);
+            continue;
           }
-        );
-
-        if (!searchResponse.ok) {
-          failureList.push(username);
-          continue;
-        }
-
-        const members = await searchResponse.json();
-        const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
-
-        if (!user) {
-          failureList.push(username);
-          continue;
-        }
-
-        // Add role to user
-        const addRoleResponse = await fetch(
-          `https://discord.com/api/v9/guilds/${guildId}/members/${user.user.id}/roles/${roleId}`,
-          {
-            method: "PUT",
-            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+          const members = await searchResponse.json();
+          const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
+          if (!user) {
+            failureList.push(username);
+            continue;
           }
-        );
-
-        if (addRoleResponse.ok) {
-          successList.push(username);
-        } else {
+          // Add role to user
+          const addRoleResponse = await fetch(
+            `https://discord.com/api/v9/guilds/${guildId}/members/${user.user.id}/roles/${roleId}`,
+            {
+              method: "PUT",
+              headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+            }
+          );
+          if (addRoleResponse.ok) {
+            successList.push(username);
+          } else {
+            failureList.push(username);
+          }
+        } catch (error) {
           failureList.push(username);
         }
-      } catch (error) {
-        failureList.push(username);
       }
+      // Update progress after processing each batch
+      const progressMessage = `Processing roles...\n✅ Added: ${successList.join(', ')}\n❌ Failed: ${failureList.join(', ')}\nProcessed ${Math.min(i + batchSize, users.length)} of ${users.length}`;
+      await updateOriginalMessage(interaction, env, progressMessage);
     }
-
-    // Construct final response message.
-    let responseMessage = '';
+    
+    // Final update message
+    let finalMessage = '';
     if (successList.length > 0) {
-      responseMessage += `✅ **${roleName}** added to: ${successList.join(', ')}\n`;
+      finalMessage += `✅ **${roleName}** added to: ${successList.join(', ')}\n`;
     }
     if (failureList.length > 0) {
-      responseMessage += `❌ Failed to add **${roleName}** to: ${failureList.join(', ')}`;
+      finalMessage += `❌ Failed to add **${roleName}** to: ${failureList.join(', ')}`;
     }
-
-    await updateOriginalMessage(interaction, env, responseMessage);
+    await updateOriginalMessage(interaction, env, finalMessage);
   } catch (error: any) {
     await updateOriginalMessage(interaction, env, `❌ An error occurred: ${error.message}`);
   }
