@@ -255,6 +255,7 @@ if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
     }
   }
 
+
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     if (interaction.data.name === 'role') {
       const roleId = interaction.data.options.find((opt: any) => opt.name === 'role_id')?.value;
@@ -302,7 +303,7 @@ async function verifyDiscordRequest(request: any, env: any) {
   return { interaction: JSON.parse(body), isValid: true };
 }
 
-// Process the role assignment in batches to handle large lists synchronously
+// Process the role assignment in batches, processing each batch concurrently
 async function processRoleAssignment(
   interaction: any,
   env: any,
@@ -314,7 +315,7 @@ async function processRoleAssignment(
   let roleName = `Role ID ${roleId}`;
   let successList: string[] = [];
   let failureList: string[] = [];
-  const batchSize = 10; // You can adjust the batch size as needed
+  const batchSize = 10; // adjust batch size as needed
 
   try {
     // Fetch all roles from the server
@@ -357,10 +358,10 @@ async function processRoleAssignment(
       return;
     }
 
-    // Process users in batches synchronously
+    // Process users in batches concurrently
     for (let i = 0; i < users.length; i += batchSize) {
       const batch = users.slice(i, i + batchSize);
-      for (const username of batch) {
+      await Promise.all(batch.map(async (username) => {
         try {
           // Fetch user ID by username using search endpoint
           const searchResponse = await fetch(
@@ -371,13 +372,13 @@ async function processRoleAssignment(
           );
           if (!searchResponse.ok) {
             failureList.push(username);
-            continue;
+            return;
           }
           const members = await searchResponse.json();
           const user = members.find((m: any) => m.user.username.toLowerCase() === username.toLowerCase());
           if (!user) {
             failureList.push(username);
-            continue;
+            return;
           }
           // Add role to user
           const addRoleResponse = await fetch(
@@ -395,7 +396,8 @@ async function processRoleAssignment(
         } catch (error) {
           failureList.push(username);
         }
-      }
+      }));
+
       // Update progress after processing each batch
       const progressMessage = `Processing roles...\n✅ Added: ${successList.join(', ')}\n❌ Failed: ${failureList.join(', ')}\nProcessed ${Math.min(i + batchSize, users.length)} of ${users.length}`;
       await updateOriginalMessage(interaction, env, progressMessage);
