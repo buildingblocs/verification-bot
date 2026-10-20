@@ -21,3 +21,18 @@ export const ROLE_CMD = {
         }
     ]
 };
+
+export const GET_ID_CMD = {
+    name: 'get-id',
+    description: "Get a user's Discord ID",
+    options: [
+        {
+            name: 'user',
+            description: 'The user whose ID to retrieve (optional)',
+            type: 6,  // Type 6 corresponds to USER
+            required: false
+        }
+    ]
+};
+
+export const ALL_COMMANDS = [ROLE_CMD, GET_ID_CMD];
