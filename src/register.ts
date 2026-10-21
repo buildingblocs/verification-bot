@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import process from 'node:process';
-import ROLE_CMD from './cmds';
+import { ALL_COMMANDS } from './cmds';
 
 /**
  * This file is meant to be run from the command line, and is not used by the
@@ -28,15 +28,14 @@ if (!applicationId) {
  */
 const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
 
-// const response = await fetch(url, {
-//     headers: {
-//         'Content-Type': 'application/json',
-//         Authorization: `Bot ${token}`,
-//     },
-//     method: 'PUT',
-//     body: JSON.stringify([ROLE_CMD]),
-// });
-// USE SMTH LIKE POSTMAN TO SEND REQ
+const response = await fetch(url, {
+    headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bot ${token}`,
+    },
+    method: 'PUT',
+    body: JSON.stringify(ALL_COMMANDS),
+});
 
 if (response.ok) {
     console.log('Registered all commands');

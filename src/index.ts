@@ -129,6 +129,31 @@ router.post('/', async (request, env) => {
         });
     }
 
+    if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+        if (interaction.data.name === 'get-id') {
+            const userOption = interaction.data.options?.find(
+                (opt: any) => opt.name === 'user'
+            );
+
+            let content = '';
+            if (userOption && userOption.value) {
+                const targetUserId = userOption.value;
+                content = `The discord user id for <@${targetUserId}> is:\n\`\`\`\n${targetUserId}\n\`\`\``;
+            } else {
+                const authorId = interaction.member?.user?.id || interaction.user?.id;
+                content = `Your discord user id is:\n\`\`\`\n${authorId}\n\`\`\``;
+            }
+
+            return new JsonResponse({
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                data: {
+                    content: content,
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                },
+            });
+        }
+    }
+
     // THIS IS THE ONLY IMPORTANT PART
     if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
         let toSend = '';
