@@ -184,7 +184,8 @@ router.post('/', async (request, env) => {
             }
         }
 
-        if (!interaction.member.nick) {
+        const displayName = interaction.member.nick ?? interaction.member.user.global_name;
+        if (!displayName) {
             return new JsonResponse({
                 // this replies to the user
                 type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -251,7 +252,7 @@ router.post('/', async (request, env) => {
             }
 
             if (interaction.data.values[0] === 'student') {
-                if (interaction.member.nick.length >= 32) {
+                if (displayName.length >= 32) {
                     toSend = "Your Display Name is too long"
                     components = [
                         {
@@ -268,7 +269,7 @@ router.post('/', async (request, env) => {
                         }
                     ]
                 } else {
-                    const user_split = interaction.member.nick.split(' ')
+                    const user_split = displayName.split(' ')
                     if (initials.includes(user_split[0])) {
                         try {
                             // change channel id as needed
@@ -309,12 +310,12 @@ router.post('/', async (request, env) => {
             };
 
             if (interaction.data.values[0] === 'org') {
-                await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
+                await flag(displayName, interaction.member.user.id, interaction.data.values[0])
                 toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
             };
 
             if (interaction.data.values[0] === 'teacherpartner') {
-                await flag(interaction.member.nick, interaction.member.user.id, interaction.data.values[0])
+                await flag(displayName, interaction.member.user.id, interaction.data.values[0])
                 toSend = 'Your account has been flagged for verification, please wait as one of our organisers verify you.';
             };
 
